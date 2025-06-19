@@ -1,0 +1,15 @@
+﻿@page "/user"
+@rendermode InteractiveServer
+@layout UsuarioLayout
+@inject IServicioSesion ServicioSesion
+
+<h3>Usuario</h3>
+<h4>Bienvenido, @user.Nombre @user.Apellido!</h4>
+
+
+@code {
+
+    public Usuario user => ServicioSesion.GetUser();
+
+}
+

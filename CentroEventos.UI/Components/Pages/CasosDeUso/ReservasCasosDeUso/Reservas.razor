@@ -1,0 +1,87 @@
+﻿@page "/reserva/{Id:int?}"
+@layout UsuarioLayout
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject AgregarReservaUseCase AgregarReservaUseCase
+@inject ModificarReservaUseCase ModificarReservaUseCase
+@inject ObtenerReservaUseCase ObtenerReservaUseCase
+@inject IServicioSesion ServicioSesion
+
+@if (_esNuevaReserva)
+{
+    <h3>Agregando una nueva Reserva</h3>
+}
+else
+{
+    <h3>Modificando a Reserva</h3>
+}
+
+<input placeholder="Persona ID" @bind="_reserva.PersonaId" class="form-control">
+<input placeholder="Evento ID" @bind="_reserva.EventoId" class="form-control">
+<input placeholder="Fecha Alta Reserva" @bind="_reserva.FechaAltaReserva" class="form-control">
+<input placeholder="Estado Asistencia" @bind="_reserva.EstadoAsistencia" class="form-control">
+<button class="btn btn-primary" @onclick="Aceptar">Aceptar</button>
+<CuadroDialogo @ref=dialogo Mensaje=@msg OnConfirmado="OnDialogoConfirmado"/>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    CuadroDialogo dialogo = null!;
+    int _usuarioId => ServicioSesion.GetUserId();
+    bool _esNuevaReserva = true;
+    string msg = "";
+    bool exito = false;
+    Reserva _reserva = new Reserva
+    {
+        FechaAltaReserva = DateTime.Now,
+        EstadoAsistencia = Asistencia.Pendiente
+    };
+
+    void Aceptar()
+    {
+        try
+        {
+            if (_esNuevaReserva)
+            {
+                AgregarReservaUseCase.Ejecutar(_usuarioId, _reserva);
+                msg = "Reserva agregada correctamente.";
+            }
+            else
+            {
+                ModificarReservaUseCase.Ejecutar(_usuarioId, _reserva);
+                _reserva = new Reserva();
+                msg = "Reserva modificada correctamente.";
+            }
+            exito = true;
+            dialogo.Mostrar();
+        }
+        catch (Exception ex)
+        {
+            msg = $"Error: {ex.Message}";
+            exito = false;
+            dialogo.Mostrar();
+        }
+    }
+
+    void OnDialogoConfirmado()
+    {
+        if (exito)
+        {
+            Navigation.NavigateTo("/listadoreservas");
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Id != null)
+        {
+            var reservaHallada = ObtenerReservaUseCase.Ejecutar(Id.Value);
+            if (reservaHallada != null)
+            {
+                _reserva = reservaHallada;
+                _esNuevaReserva = false;
+            }
+        }
+    }
+    
+
+}

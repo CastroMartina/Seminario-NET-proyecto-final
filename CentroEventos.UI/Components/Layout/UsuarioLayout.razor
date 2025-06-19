@@ -1,0 +1,106 @@
+﻿@inherits LayoutComponentBase
+@inject IServicioSesion ServicioSesion
+@inject NavigationManager Navigation
+@inject  IServicioAutorizacion ServicioAutorizacion
+
+<div class="main-content">
+    <main>
+        <article>
+            @Body
+        </article>
+    </main>
+</div>
+
+<div class="menu-lateral">
+    <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+        <nav class="flex-column">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="user" Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Inicio
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/listadopersonas">
+                    <span class="bi bi-people-fill-nav-menu" aria-hidden="true"></span> Listado de Personas
+                </NavLink>
+            </div>
+            @if (ServicioAutorizacion.PoseeElpermiso(_usuarioId, Permiso.PersonaAlta))
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/persona">
+                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Agregar Persona
+                    </NavLink>
+                </div>
+            }
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="listadoeventosdeportivos">
+                    <span class="bi bi-calendar-check-fill-nav-menu" aria-hidden="true"></span> Listado de Eventos
+                </NavLink>
+            </div>
+            @if (ServicioAutorizacion.PoseeElpermiso(_usuarioId, Permiso.EventoAlta))
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/evento">
+                        <span class="bi bi-calendar-plus-fill-nav-menu" aria-hidden="true"></span> Agregar Evento
+                    </NavLink>
+                </div>
+            }
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/listadoreservas">
+                    <span class="bi bi-calendar-event-fill-nav-menu" aria-hidden="true"></span> Listado de Reservas
+                </NavLink>
+            </div>
+            @if (ServicioAutorizacion.PoseeElpermiso(_usuarioId, Permiso.ReservaAlta))
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/reserva">
+                        <span class="bi bi-calendar-plus-fill-nav-menu" aria-hidden="true"></span> Agregar Reserva
+                    </NavLink>
+                </div>
+            }
+            <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/listadousuarios">
+                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Gestión de Usuarios
+                    </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/usuario">
+                    <span class="bi bi-person-plus-fill-nav-menu" aria-hidden="true"></span> Modificar mis Datos
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/">
+                    <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Cerrar sesión
+                </NavLink>
+            </div>
+        </nav>
+    </div>
+</div>
+
+
+
+@code {
+    int _usuarioId => ServicioSesion.GetUserId();
+
+    void IsAuthenticated()
+    {
+        if (_usuarioId.Equals(0))
+        {
+            Console.WriteLine($"DESDE LAYOUT: El usuario con ID {_usuarioId} tiene {ServicioSesion.GetUser().Permisos.Count} permisos.");
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            Console.WriteLine("DESDE LAYOUT: No hay usuario autenticado.");
+        }
+    }
+    protected override void OnInitialized()
+    {
+        IsAuthenticated();
+    }
+    void CerrarSesion()
+    {
+        ServicioSesion.CerrarSesion();
+        Navigation.NavigateTo("/");
+    }
+}    

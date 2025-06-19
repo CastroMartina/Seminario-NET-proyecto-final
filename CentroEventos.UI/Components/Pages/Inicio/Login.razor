@@ -1,0 +1,68 @@
+﻿@page "/login"
+
+@rendermode InteractiveServer
+@inject IniciarSesionUseCase IniciarSesionUseCase
+@inject NavigationManager Navigation
+@layout MainLayout
+@inject IServicioSesion ServicioSesion
+
+<PageTitle>CentroEventos | Login</PageTitle>
+
+<h3>Ingrese a su cuenta</h3>
+<form>
+    <input class="form-control" type="email" placeholder="Email" @bind="email"><br>
+    <input class="form-control" type="password" placeholder="Contraseña" @bind="contraseña"><br>
+</form>
+<button class="btn btn-primary mt-2" @onclick="Ingresar" type="button">Ingresar</button>
+<button class="btn btn-secondary mt-2" @onclick="Inicio">Volver al inicio</button>
+<CuadroDialogo @ref=dialogo Mensaje=@error />
+
+@code {
+    Usuario? usuario = new ();
+    CuadroDialogo dialogo = null!;
+    string email = "";
+    string contraseña = "";
+    string error = "";
+    
+    void Ingresar()
+    {
+        try
+        {
+            usuario = IniciarSesionUseCase.Ejecutar(email, contraseña);
+            ServicioSesion.IniciarSesion(usuario);
+            Console.WriteLine("Permisos del usuario: ");
+            foreach (var permiso in usuario.Permisos)
+            {
+                Console.WriteLine($"- {permiso.ToString()}");
+                if (permiso == Permiso.PersonaAlta)
+                {
+                    Console.WriteLine("El usuario tiene permiso para agregar personas.");
+                }
+            }
+            Redigirir(usuario.Id);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            dialogo.Mostrar();
+        }
+    }
+    void PaginaAdministrador() => Navigation.NavigateTo("/administrador");
+    void PaginaUsuario() => Navigation.NavigateTo("/user");
+    void Inicio() => Navigation.NavigateTo("/");
+
+    void Redigirir(int usuarioId)
+    {
+        if (usuarioId == 1)
+        {
+            PaginaAdministrador();
+        }
+        else
+        {
+            PaginaUsuario();
+        }
+    }
+
+}   
+
+

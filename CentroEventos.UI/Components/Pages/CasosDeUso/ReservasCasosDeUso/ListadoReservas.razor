@@ -1,0 +1,86 @@
+﻿@page "/listadoreservas"
+@rendermode InteractiveServer
+@layout UsuarioLayout
+@inject NavigationManager Navigation
+@inject IServicioSesion ServicioSesion
+@inject IServicioAutorizacion ServicioAutorizacion
+@inject ListarReservasUseCase ListarReservasUseCase
+@inject EliminarReservaUseCase EliminarReservaUseCase
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>PERSONA ID</th>
+            <th>EVENTO ID</th>
+            <th>FECHA ALTA RESERVA</th>
+            <th>ESTADO ASISTENCIA</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var reserva in _reservas)
+        {
+            <tr>
+                <td>@reserva.Id</td>
+                <td>@reserva.PersonaId</td>
+                <td>@reserva.EventoId</td>
+                <td>@reserva.FechaAltaReserva.ToString()</td>
+                <td>@reserva.EstadoAsistencia.ToString()</td>
+            </tr>
+            <td>
+                
+
+            </td>
+
+        }
+    </tbody>
+</table>
+
+
+@code {
+    List<Reserva> _reservas = new List<Reserva>();
+    List<Permiso> _permisos => ServicioSesion.GetUser().Permisos;
+    string msg = "";
+    DialogoConfirmacion dialogo = null!;
+    Reserva? _reservaAEliminar = null;
+    int UsuarioId => ServicioSesion.GetUserId();
+
+    void ConfirmarEliminacion(Reserva reserva)
+    {
+        _reservaAEliminar = reserva;
+        msg = $"¿Está seguro que desea eliminar la reserva con ID {reserva.Id}?";
+        dialogo.Mostrar();
+    }
+
+    void EliminarReserva()
+    {
+        if (_reservaAEliminar != null)
+        {
+            try
+            {
+                EliminarReservaUseCase.Ejecutar(UsuarioId, _reservaAEliminar.Id);
+                msg = "Reserva eliminada correctamente.";
+            }
+            catch (Exception ex)
+            {
+                msg = $"Error al eliminar la reserva: {ex.Message}";
+            }
+        }
+        else
+        {
+            msg = "No se ha seleccionado ninguna reserva para eliminar.";
+        }
+
+        dialogo.Mostrar();
+    }
+
+    void ModificarReserva(Reserva reserva)
+    {
+        Navigation.NavigateTo($"/reservas/{reserva.Id}");
+    }
+
+    protected override void OnInitialized()
+    {
+        _reservas = ListarReservasUseCase.Ejecutar();
+    }
+}

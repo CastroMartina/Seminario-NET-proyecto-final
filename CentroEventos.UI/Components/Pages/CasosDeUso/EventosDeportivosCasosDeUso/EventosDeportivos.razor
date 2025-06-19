@@ -1,0 +1,85 @@
+﻿@page "/evento/{Id:int?}"
+@layout UsuarioLayout
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject AgregarEventoDeportivoUseCase AgregarEventoDeportivoUseCase
+@inject ModificarEventoDeportivoUseCase ModificarEventoDeportivoUseCase
+@inject ObtenerEventoDeportivoUseCase ObtenerEventoDeportivoUseCase
+@inject IServicioSesion ServicioSesion
+
+@if (_esNuevoEvento)
+{
+    <h3>Agregando un nuevo Evento Deportivo</h3>
+}
+else
+{
+    <h3>Modificando el Evento Deportivo: @_evento.Nombre</h3>
+}
+
+<input placeholder="Nombre" @bind="_evento.Nombre" class="form-control">
+<input placeholder="Descripción" @bind="_evento.Descripcion" class="form-control">
+<input type="datetime-local" @bind="_evento.FechaHoraInicio" class="form-control">
+<input placeholder="Duración (horas)" @bind="_evento.DuracionHoras" class="form-control">
+<input placeholder="Cupo Máximo" @bind="_evento.CupoMaximo" class="form-control">
+<input placeholder="Responsable ID" @bind="_evento.ResponsableId" class="form-control">
+<button class="btn btn-primary" @onclick="Aceptar">Aceptar</button>
+<CuadroDialogo @ref="dialogo" Mensaje="@msg" OnConfirmado="OnDialogoConfirmado"/>
+
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    CuadroDialogo dialogo = null!;
+    EventoDeportivo _evento = new EventoDeportivo();
+    bool _esNuevoEvento = true;
+    string msg = "";
+    bool exito = false;
+    int _usuarioId => ServicioSesion.GetUserId();
+    void Aceptar()
+    {
+        try
+        {
+            if (_esNuevoEvento)
+            {
+                AgregarEventoDeportivoUseCase.Ejecutar(_usuarioId, _evento);
+            }
+            else
+            {
+                ModificarEventoDeportivoUseCase.Ejecutar(_usuarioId, _evento);
+            }
+            exito = true;
+            msg = "Evento guardado correctamente.";
+        }
+        catch (Exception ex)
+        {
+            msg = $"Error al guardar el evento: {ex.Message}";
+        }
+        finally
+        {
+            dialogo.Mostrar();
+        }
+    }
+
+    void OnDialogoConfirmado()
+    {
+        if (exito)
+        {
+            Navigation.NavigateTo("/listadoeventosdeportivos");
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Id != null)
+        {
+            var eventoHallado = ObtenerEventoDeportivoUseCase.Ejecutar(Id.Value);
+            if (eventoHallado != null)
+            {
+                _evento = eventoHallado;
+                _esNuevoEvento = false;
+            }
+        }
+    }
+
+
+}
+

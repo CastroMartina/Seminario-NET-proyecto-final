@@ -1,0 +1,52 @@
+﻿@page "/signup"
+@rendermode InteractiveServer
+@inject AgregarUsuarioUseCase AgregarUsuarioUseCase
+@inject NavigationManager Navegador
+
+<PageTitle>CentroEventos | Signup</PageTitle>
+
+<h3>Ingrese sus datos personales</h3>
+<form>
+    <input class="form-control" type="text" placeholder="Nombre" @bind="u.Nombre"><br>
+    <input class="form-control" type="text" placeholder="Apellido" @bind="u.Apellido"><br>
+    <input class="form-control" type="email" placeholder="Email" @bind="u.Email"><br>
+    <input class="form-control" type="password" placeholder="Contraseña" @bind="u.Contraseña"><br>
+</form>
+<button class="btn btn-primary mt-2" @onclick="Agregar">Aceptar</button><br>
+<button class="btn btn-secondary mt-2" @onclick="Inicio">Volver al inicio</button>
+<CuadroDialogo @ref=dialogo Mensaje=@msg OnConfirmado="OnDialogoConfirmado"/>
+
+@code {
+    Usuario u = new Usuario();
+    string msg = "";
+    CuadroDialogo dialogo = null!;
+    bool exito = false;
+
+    void Agregar()
+    {
+        try
+        {
+            Console.WriteLine("Intentando agregar usuario...");
+            AgregarUsuarioUseCase.Ejecutar(u);
+            msg = "Se ha registrado exitosamente.";
+            exito = true;
+            dialogo.Mostrar();
+        }
+        catch (Exception ex)
+        {
+            msg = ex.Message;
+            exito = false;
+            dialogo.Mostrar();
+        }
+    }
+    void Inicio() => Navegador.NavigateTo("/");
+    void Login() => Navegador.NavigateTo("login");
+
+    void OnDialogoConfirmado()
+    {
+        if (exito)
+        {
+            Login();
+        }
+    }
+}

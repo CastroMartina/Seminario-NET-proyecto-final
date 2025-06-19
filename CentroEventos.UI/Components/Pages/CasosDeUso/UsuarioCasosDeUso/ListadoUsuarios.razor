@@ -1,0 +1,85 @@
+﻿@page "/listadousuarios"
+@layout UsuarioLayout
+@rendermode InteractiveServer
+@inject IServicioSesion ServicioSesion
+@inject ListarUsuariosUseCase ListarUsuariosUseCase
+@inject NavigationManager Navigation
+@inject IServicioAutorizacion ServicioAutorizacion
+@inject IServicioSesion ServicioUsuario
+@inject EliminarUsuarioUseCase EliminarUsuarioUseCase
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>NOMBRE</th>
+            <th>APELLIDO</th>
+            <th>EMAIL</th>
+            <th>PERMISOS</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var usuario in _usuarios)
+        {
+            <tr>
+                <td>@usuario.Id</td>
+                <td>@usuario.Nombre</td>
+                <td>@usuario.Apellido</td>
+                <td>@usuario.Email</td>
+                <td>@usuario.PermisosAsignados</td>
+            </tr>
+            @if (usuario.Id != _usuario.Id)
+            {
+                 <button class="btn btn-warning" @onclick="()=>ModificarUsuario(usuario)">Editar</button>
+            }
+           
+            @if (ServicioAutorizacion.PoseeElpermiso(_usuarioId, Permiso.UsuarioBaja) && usuario.Id != _usuario.Id)
+            {
+                <button class="btn btn-danger" @onclick="()=>ConfirmarEliminacion(usuario)">Eliminar</button>
+            }
+        }
+    </tbody>
+</table>
+<DialogoConfirmacion @ref="dialogo" Mensaje="@msg" OnConfirm="EliminarUsuario" />
+
+
+@code {
+    DialogoConfirmacion dialogo = null!;
+    Usuario _usuario => ServicioSesion.GetUser();
+    Usuario? _usuarioAEliminar = null;
+    private List<Usuario> _usuarios = new ();
+    string msg = "";
+    int _usuarioId => ServicioSesion.GetUserId();
+
+    void ModificarUsuario(Usuario usuario)
+    {
+        Navigation.NavigateTo($"/usuario/{usuario.Id}");
+    }
+    protected override void OnInitialized()
+    {
+        _usuarios = ListarUsuariosUseCase.Ejecutar(_usuario);
+    }
+
+    void ConfirmarEliminacion(Usuario usuario)
+    {
+        _usuarioAEliminar = usuario;
+        msg = $"¿Está seguro que desea eliminar a {usuario.Nombre} {usuario.Apellido}?";
+        dialogo.Mostrar();
+    }
+    void EliminarUsuario()
+    {
+        if (_usuarioAEliminar != null)
+        {
+            try
+            {
+                EliminarUsuarioUseCase.Ejecutar(_usuarioId, _usuarioAEliminar.Email);
+                _usuarios = ListarUsuariosUseCase.Ejecutar(_usuario);
+            }
+            catch (Exception ex)
+            {
+                msg = $"Error: {ex.Message}";
+                dialogo.Mostrar();
+            }
+        }
+    }
+}

@@ -1,0 +1,90 @@
+﻿@page "/listadopersonas"
+@rendermode InteractiveServer
+@layout UsuarioLayout
+@inject IServicioAutorizacion ServicioAutorizacion
+@inject IServicioSesion ServicioSesion
+@inject NavigationManager Navigation
+@inject ListarPersonasUseCase ListarPersonasUseCase
+@inject EliminarPersonaUseCase EliminarPersonaUseCase
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>DNI</th>
+            <th>NOMBRE</th>
+            <th>APELLIDO</th>
+            <th>EMAIL</th>
+            <th>TELEFONO</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var persona in personas)
+        {
+            <tr>
+                <td>@persona.Id</td>
+                <td>@persona.DNI</td>
+                <td>@persona.Nombre</td>
+                <td>@persona.Apellido</td>
+                <td>@persona.Email</td>
+                <td>@persona.Telefono</td>
+                <td>
+                    @if (ServicioAutorizacion.PoseeElpermiso(_usuarioId,Permiso.PersonaBaja))
+                    {
+                        <button class="btn btn-danger" @onclick="()=>ConfirmarEliminacion(persona)">Eliminar</button>
+                    }
+                    @if (ServicioAutorizacion.PoseeElpermiso(_usuarioId,Permiso.PersonaModificacion))
+                    {
+                        <button class="btn btn-warning" @onclick="()=>ModificarPersona(persona)">Editar</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<DialogoConfirmacion @ref="dialogo" Mensaje="@msg" OnConfirm="EliminarPersona" />
+
+
+@code {
+    List<Persona> personas = new List<Persona>();
+    private List<Permiso> permisos => ServicioSesion.GetUser().Permisos;
+    string msg = "";
+    DialogoConfirmacion dialogo = null!;
+    Persona? _personaAEliminar = null;
+    int _usuarioId => ServicioSesion.GetUserId();
+    void ConfirmarEliminacion(Persona persona)
+    {
+        _personaAEliminar = persona;
+        msg = $"¿Está seguro que desea eliminar a {persona.Nombre} {persona.Apellido}?";
+        dialogo.Mostrar();
+    }
+
+    void EliminarPersona()
+    {
+        if (_personaAEliminar != null)
+        {
+            try
+            {
+                EliminarPersonaUseCase.Ejecutar(_usuarioId,_personaAEliminar.Id);
+                personas = ListarPersonasUseCase.Ejecutar();
+            }
+            catch (Exception ex)
+            {
+                msg = ex.Message;
+                dialogo.Mostrar();
+            }
+        }
+    }
+
+    void ModificarPersona(Persona persona)
+    {
+        Navigation.NavigateTo($"/persona/{persona.Id}");
+    }
+
+    protected override void OnInitialized()
+    {
+        personas = ListarPersonasUseCase.Ejecutar();
+    }
+
+}

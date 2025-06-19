@@ -1,0 +1,88 @@
+﻿@page "/listadoeventosdeportivos"
+@rendermode InteractiveServer
+@layout UsuarioLayout
+@inject NavigationManager Navigation
+@inject IServicioAutorizacion ServicioAutorizacion
+@inject IServicioSesion ServicioSesion
+@inject ListarEventosDeportivosUseCase ListarEventosDeportivosUseCase
+@inject EliminarEventoDeportivoUseCase EliminarEventoDeportivoUseCase
+@inject ListarEventosDeportivosUseCase ListarEventosDeportivosUseCase
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>NOMBRE</th>
+            <th>DESCRIPCION</th>
+            <th>FECHA HORA INICIO</th>
+            <th>DURACION HORAS</th>
+            <th>CUPOS MAXIMOS</th>
+            <th>RESPONSABLE ID</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var evento in eventos)
+        {
+            <tr>
+                <td>@evento.Id</td>
+                <td>@evento.Nombre</td>
+                <td>@evento.Descripcion</td>
+                <td>@evento.FechaHoraInicio.ToString()</td>
+                <td>@evento.DuracionHoras</td>
+                <td>@evento.CupoMaximo</td>
+                <td>@evento.ResponsableId</td>
+            </tr>
+            <td>    
+            
+            </td>
+        }
+    </tbody>
+</table>
+
+<DialogoConfirmacion @ref="dialogo" Mensaje="@msg" OnConfirm="EliminarEventoDeportivo" />
+
+@code {
+    List<EventoDeportivo> eventos = new List<EventoDeportivo>();
+
+    List<Permiso> _permisos => ServicioSesion.GetUser().Permisos;
+    string msg = "";
+    DialogoConfirmacion dialogo = null!;
+    EventoDeportivo? _eventoAEliminar = null;
+    int UsuarioId => ServicioSesion.GetUserId();
+
+    void ConfirmarEliminacion(EventoDeportivo evento)
+    {
+        _eventoAEliminar = evento;
+        msg = $"¿Está seguro que desea eliminar el evento {evento.Nombre}?";
+        dialogo.Mostrar();
+    }
+
+    void EliminarEventoDeportivo()
+    {
+        if (_eventoAEliminar == null)
+            return;
+
+        try
+        {
+            EliminarEventoDeportivoUseCase.Ejecutar(UsuarioId, _eventoAEliminar.Id);
+            msg = "Evento eliminado correctamente.";
+        }
+        catch (Exception ex)
+        {
+            msg = $"Error al eliminar el evento: {ex.Message}";
+        }
+        finally
+        {
+            dialogo.Mostrar();
+            eventos = ListarEventosDeportivosUseCase.Ejecutar();
+        }
+    }
+
+    void ModificarEvento(EventoDeportivo evento)
+    {
+        Navigation.NavigateTo($"/evento/{evento.Id}");
+    }
+    protected override void OnInitialized()
+    {
+        eventos = ListarEventosDeportivosUseCase.Ejecutar();
+    }
+}

@@ -1,0 +1,95 @@
+﻿@page "/usuario/{Id:int?}"
+@rendermode InteractiveServer
+@layout UsuarioLayout
+@inject NavigationManager Navigation
+@inject IServicioSesion ServicioSesion
+@inject ModificarUsuarioUseCase ModificarUsuarioUseCase
+@inject ObtenerUsuarioUseCase ObtenerUsuarioUseCase
+
+@if (_esEdicionPropia)
+{
+    <h3>Modificar mis datos</h3>
+}
+else
+{
+    <h3>Modificar Usuario</h3>
+}
+
+<input placeholder="Nombre" @bind="_usuarioDatosNuevos.Nombre" class="form-control">
+<input placeholder="Apellido" @bind="_usuarioDatosNuevos.Apellido" class="form-control">
+<input placeholder="Email" @bind="_usuarioDatosNuevos.Email" class="form-control">
+<button class="btn btn-primary" @onclick="Aceptar">Aceptar</button>
+
+<div class="mt-4">
+    <span class="fw-bold">¿Desea cambiar la contraseña?</span>
+        <br />
+        <button class="btn btn-secondary mt-2" type="button" @onclick="CambiarContraseña">
+            Cambiar contraseña
+        </button>
+</div>
+
+<CuadroDialogo @ref=dialogo Mensaje=@msg OnConfirmado="OnDialogoConfirmado"/>
+
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    CuadroDialogo dialogo = null!;
+    Usuario _usuarioDatosNuevos = new Usuario();
+    Usuario _usuarioDatosOriginales = new Usuario();
+    bool _esEdicionPropia;
+    string msg = "";
+    bool exito = false;
+
+    void Aceptar()
+    {
+        try
+        {
+            Console.WriteLine($"UsuarioId: {_usuarioDatosNuevos.Contraseña}");
+            ModificarUsuarioUseCase.Ejecutar(ServicioSesion.GetUserId(), _usuarioDatosOriginales, _usuarioDatosNuevos);
+            msg = "Usuario modificado correctamente.";
+            exito = true;
+
+        }
+        catch (Exception ex)
+        {
+            msg = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            dialogo.Mostrar();
+        }
+
+    }
+
+    void CambiarContraseña()
+    {
+        Navigation.NavigateTo($"/cambiarcontraseña/{_usuarioDatosNuevos.Id}");
+    }
+
+    void OnDialogoConfirmado()
+    {
+        if (exito)
+        {
+            Navigation.NavigateTo("/listadousuarios");
+        }
+    }
+    protected override void OnParametersSet()
+    {
+        if (Id == null)
+        {
+            _usuarioDatosOriginales = ServicioSesion.GetUser();
+            _esEdicionPropia = true;
+        }
+        else
+        {
+            var usuarioObtenido = ObtenerUsuarioUseCase.Ejecutar(Id.Value);
+            if(usuarioObtenido != null)
+            {
+                _usuarioDatosOriginales = usuarioObtenido;
+                _esEdicionPropia = false;
+            }
+        }
+        _usuarioDatosNuevos = _usuarioDatosOriginales.copy();
+    }
+
+}

@@ -1,0 +1,83 @@
+﻿@page "/cambiarcontraseña/{Id:int?}"
+@layout UsuarioLayout
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject ModificarUsuarioUseCase ModificarUsuarioUseCase
+@inject ObtenerUsuarioUseCase ObtenerUsuarioUseCase
+@inject IServicioSesion ServicioSesion
+
+<h3>Cambiar Contraseña</h3>
+
+<div>
+    <input type="password" placeholder="Nueva Contraseña" @bind="_nuevaContraseña" class="form-control">
+    <input type="password" placeholder="Confirmar Contraseña" @bind="_confirmarContraseña" class="form-control">
+    <button class="btn btn-danger" @onclick="()=>ConfirmarCambioContraseña(_nuevaContraseña)">Aceptar</button>
+</div>
+
+<DialogoConfirmacion @ref="dialogo" Mensaje="@msg" OnConfirm="CambioContraseña" />
+<CuadroDialogo @ref="cuadroDialogo" Mensaje="@msj" OnConfirmado="()=>exito = true" />
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    Usuario _usuarioDatosOriginales = new Usuario();
+    Usuario _usuarioDatosNuevos = new Usuario();
+    DialogoConfirmacion dialogo = null!;
+    CuadroDialogo cuadroDialogo = null!;
+    bool exito = false;
+    string _nuevaContraseña = "";
+    string _confirmarContraseña = "";
+    int _usuarioSesionID => ServicioSesion.GetUserId();
+    string msg = "";
+    string msj = "";
+
+    void ConfirmarCambioContraseña(string contraseña )
+    {
+        _nuevaContraseña = contraseña;
+        msg = "¿Está seguro que desea cambiar la contraseña?";
+        dialogo.Mostrar();
+    }   
+
+    void CambioContraseña()
+    {
+        try
+        {
+            if (_nuevaContraseña == _confirmarContraseña)
+            {
+                _usuarioDatosNuevos.Contraseña = _nuevaContraseña;
+                ModificarUsuarioUseCase.Ejecutar(_usuarioSesionID, _usuarioDatosOriginales, _usuarioDatosNuevos);
+                exito = true;
+                msj = "Contraseña cambiada correctamente.";
+                
+            }
+            else
+            {
+                msj = "Las contraseñas no coinciden.";
+            }
+        }
+        catch (Exception ex)
+        {
+            msj = $"{ex.Message}";
+        }
+        finally
+        {
+            cuadroDialogo.Mostrar();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Id == null)
+        {
+            _usuarioDatosOriginales = ServicioSesion.GetUser();        }
+        else
+        {
+            var usuarioObtenido = ObtenerUsuarioUseCase.Ejecutar(Id.Value);
+            if(usuarioObtenido != null)
+            {
+                _usuarioDatosOriginales = usuarioObtenido;
+            }
+        }
+        _usuarioDatosNuevos = _usuarioDatosOriginales.copy();
+    }
+
+}

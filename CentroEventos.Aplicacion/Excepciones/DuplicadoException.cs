@@ -1,0 +1,14 @@
+using System;
+
+namespace CentroEventos.Aplicacion.Excepciones;
+
+public class DuplicadoException : Exception
+{
+    public DuplicadoException()
+    { }
+    public DuplicadoException(string message) : base(message)
+    { }
+    public DuplicadoException(string message, Exception innerException) : base(message, innerException)
+    { }
+
+}
